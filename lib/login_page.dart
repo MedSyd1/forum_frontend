@@ -1,51 +1,70 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-
+import 'package:forum_frontend/home_page.dart';
 import 'package:http/http.dart' as http;
 
+class LoginPage extends StatefulWidget {
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
 
-class LoginPage extends StatelessWidget {
+class _LoginPageState extends State<LoginPage> {
   // Controllers to capture input from TextFields
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  Future<void> login() async{
+  String? errorMessage;  // Variable to hold the error message
+
+  Future<void> login() async {
     final String username = _usernameController.text;
     final String password = _passwordController.text;
 
-    final Map<String,String> requestBody = {
-      'username' : username,
-      'password' : password,
-     };
+    final Map<String, String> requestBody = {
+      'username': username,
+      'password': password,
+    };
 
-  try {
-
-        final response = await http.post(
-          Uri.parse('http://10.0.2.2:8080/auth/login'),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode({"username": username, "password": password}),
-);
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:8080/auth/login'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"username": username, "password": password}),
+      );
 
       // Check the response status
       if (response.statusCode == 200) {
         // Successfully authenticated
         print("Login successful: ${response.body}");
+        setState(() {
+          errorMessage = null; // Clear error message on successful login
+        });
+         Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
       } else if (response.statusCode == 404) {
         // User not found
-        print("User not found");
+        setState(() {
+          errorMessage = "User not found";
+        });
       } else if (response.statusCode == 401) {
         // Invalid credentials
-        print("Invalid credentials");
+        setState(() {
+          errorMessage = "Invalid credentials";
+        });
       } else {
         // Other errors
-        print("Login failed with status: ${response.statusCode}");
+        setState(() {
+          errorMessage = "Login failed with status: ${response.statusCode}";
+        });
       }
     } catch (e) {
-      print("Error occurred: $e");
+      setState(() {
+        errorMessage = "Error occurred: $e";
+      });
     }
-
-  } 
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +101,6 @@ class LoginPage extends StatelessWidget {
             // Login Button
             ElevatedButton(
               onPressed: () {
-
                 print("Username: ${_usernameController.text}");
                 print("Password: ${_passwordController.text}");
                 login();
@@ -102,6 +120,18 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
             ),
+            SizedBox(height: 20), // Adds vertical spacing before the error message
+
+            // Error message (if any)
+            if (errorMessage != null) 
+              Text(
+                errorMessage!,
+                style: TextStyle(
+                  color: Colors.red,  // Red color for error message
+                  fontSize: 16,       // Optional: Set the font size
+                  fontWeight: FontWeight.bold, // Optional: Make the text bold
+                ),
+              ),
           ],
         ),
       ),
