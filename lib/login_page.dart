@@ -1,8 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:forum_frontend/home_page.dart';
+import 'package:forum_frontend/user.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'user_provider.dart'; // Import the UserProvider
+import 'register_page.dart'; // Import the RegisterPage
 
 class LoginPage extends StatefulWidget {
   @override
@@ -14,7 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  String? errorMessage;  // Variable to hold the error message
+  String? errorMessage; // Variable to hold the error message
 
   Future<void> login() async {
     final String username = _usernameController.text;
@@ -29,7 +32,7 @@ class _LoginPageState extends State<LoginPage> {
       final response = await http.post(
         Uri.parse('http://localhost:8080/auth/login'),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"username": username, "password": password}),
+        body: jsonEncode(requestBody),
       );
 
       // Check the response status
@@ -39,7 +42,15 @@ class _LoginPageState extends State<LoginPage> {
         setState(() {
           errorMessage = null; // Clear error message on successful login
         });
-         Navigator.pushReplacement(
+
+        final userDTO = jsonDecode(response.body);
+        final user = User.fromJson(userDTO);
+
+        // Store the user in the provider
+        Provider.of<UserProvider>(context, listen: false).setUser(user);
+
+        // Navigate to the HomePage
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomePage()),
         );
@@ -70,69 +81,118 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        backgroundColor: Color(0xFF3C4151), // Set the AppBar background color to match the page
+        elevation: 0, // Removes the AppBar shadow for a seamless look
+        automaticallyImplyLeading: false, // Remove the back arrow
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0), // Adds padding around the content
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // Centers the column vertically
-          children: [
-            // Username TextField
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(), // Adds a border around the TextField
-              ),
-            ),
-            SizedBox(height: 20), // Adds vertical spacing between the fields
+      body: Container(
+        color: Color(0xFF3C4151), // Set background color to #3C4151
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0), // Adds padding around the content
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start, // Align elements to the top of the screen
+            children: [
+              SizedBox(height: 50), // Adds vertical spacing from the top of the screen
 
-            // Password TextField
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(), // Adds a border around the TextField
-              ),
-              obscureText: true, // Hides the text input for passwords
-            ),
-            SizedBox(height: 20), // Adds vertical spacing before the button
-
-            // Login Button
-            ElevatedButton(
-              onPressed: () {
-                print("Username: ${_usernameController.text}");
-                print("Password: ${_passwordController.text}");
-                login();
-              },
-              child: Text(
-                'Login',
-                style: TextStyle(
-                  color: Colors.white, // Sets the text color to white
-                  fontSize: 16, // Optional: Sets the font size
+              // Larger Logo Image at the Top with Border Radius
+              ClipRRect(
+                borderRadius: BorderRadius.circular(7), // Border radius of 7px
+                child: Image.asset(
+                  'assets/images/image6.png', // Use image6.png as the logo
+                  height: 180, // Make the logo larger
+                  fit: BoxFit.contain,
                 ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.lightBlue, // Sets the background color to light blue
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15), // Optional: Adjusts padding
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8), // Optional: Rounds the button corners
-                ),
-              ),
-            ),
-            SizedBox(height: 20), // Adds vertical spacing before the error message
+              SizedBox(height: 40), // Adds vertical spacing between the image and input fields
 
-            // Error message (if any)
-            if (errorMessage != null) 
-              Text(
-                errorMessage!,
-                style: TextStyle(
-                  color: Colors.red,  // Red color for error message
-                  fontSize: 16,       // Optional: Set the font size
-                  fontWeight: FontWeight.bold, // Optional: Make the text bold
+              // Username TextField
+              TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  labelStyle: TextStyle(color: Colors.white), // White label text
+                  filled: false, // Transparent background
+                ),
+                style: TextStyle(color: Colors.white), // White text color
+              ),
+              SizedBox(height: 20), // Adds vertical spacing between the fields
+
+              // Password TextField
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  labelStyle: TextStyle(color: Colors.white), // White label text
+                  filled: false, // Transparent background
+                ),
+                style: TextStyle(color: Colors.white), // White text color
+                obscureText: true, // Hides the text input for passwords
+              ),
+              SizedBox(height: 20), // Adds vertical spacing before the button
+
+              // Login Button without Icon and with New Color
+              ElevatedButton(
+                onPressed: () {
+                  login();
+                },
+                child: Text(
+                  'Login',
+                  style: TextStyle(
+                    color: Colors.white, // Sets the text color to white
+                    fontSize: 16, // Optional: Sets the font size
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF42A5F4), // Set the button color to #42A5F4
+                  elevation: 5, // Adds a slight elevation for 3D effect
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 40, vertical: 15), // Optional: Adjusts padding
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8), // Optional: Rounds the button corners
+                  ),
                 ),
               ),
-          ],
+              SizedBox(height: 20), // Adds vertical spacing before the error message
+
+              // Error message (if any)
+              if (errorMessage != null)
+                Text(
+                  errorMessage!,
+                  style: TextStyle(
+                    color: Colors.red, // Red color for error message
+                    fontSize: 16, // Optional: Set the font size
+                    fontWeight: FontWeight.bold, // Optional: Make the text bold
+                  ),
+                ),
+
+              // Link to Register Page with padding at the bottom
+              SizedBox(height: 40), // Adds vertical spacing before the link
+              TextButton(
+                onPressed: () {
+                  // Navigate to the RegisterPage
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => RegisterPage()),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: Text(
+                    "Don't have an account? Register here",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.white,
+                      decorationStyle: TextDecorationStyle.solid,
+                      decorationThickness: 2,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
